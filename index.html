@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>أوامر cmd  - المحاكي الاحترافي الكامل</title>
+    <meta name="description" content="محاكي CMD كامل في المتصفح مع مئات الأوامر المدعومة، بحث متقدم، سجل الأوامر، ثيمات، وميزات إضافية.">
+    
+    <style>
+        :root {
+            --primary: #00ff41;
+            --bg: #0c0c0c;
+            --card: #1e1e1e;
+            --text: #ffffff;
+            --muted: #aaaaaa;
+            --terminal-bg: #000000;
+            --terminal-text: #00ff41;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 10px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        header { text-align: center; padding: 20px 0; }
+        header h1 { color: var(--primary); margin: 0; }
+        
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .theme-select, .font-select {
+            padding: 8px;
+            background: var(--card);
+            color: white;
+            border: 1px solid #444;
+            border-radius: 6px;
+        }
+
+        /* Terminal */
+        .terminal-window {
+            background: var(--terminal-bg);
+            border: 2px solid #333;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+        }
+
+        .terminal-header {
+            background: #333;
+            padding: 8px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: #ddd;
+            direction: ltr;
+        }
+
+        .terminal-body {
+            padding: 15px;
+            min-height: 350px;
+            max-height: 500px;
+            overflow-y: auto;
+            font-family: 'Consolas', 'Courier New', monospace;
+            direction: ltr;
+            text-align: left;
+            color: var(--terminal-text);
+        }
+
+        .input-line {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .prompt { color: var(--primary); white-space: nowrap; }
+
+        #cmdInput {
+            background: transparent;
+            border: none;
+            color: white;
+            outline: none;
+            width: 100%;
+            font-family: inherit;
+            font-size: 1rem;
+        }
+
+        .output { margin-bottom: 10px; white-space: pre-wrap; color: #ccc; }
+        .error { color: #ff5f56; }
+
+        .search-box { margin-bottom: 20px; }
+        #searchBar {
+            width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #444;
+            background: var(--card); color: white; outline: none;
+        }
+
+        .cmd-card {
+            background: var(--card); margin: 8px 0; padding: 12px;
+            border-radius: 8px; border: 1px solid transparent; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .cmd-card:hover { border-color: var(--primary); transform: translateY(-2px); }
+        .cmd-name { 
+            color: var(--primary); font-weight: bold; background: #000; 
+            padding: 2px 6px; border-radius: 4px; margin-left: 10px;
+            font-family: monospace;
+        }
+        .category-title { color: var(--primary); border-bottom: 1px solid #333; margin-top: 30px; padding-bottom: 5px; }
+
+        .history-btn {
+            background: var(--card);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>تعلم أوامر cmd </h1>
+            <p>محاكي CMD احترافي كامل في المتصفح – اكتب <code>help</code> لعرض جميع الأوامر المدعومة</p>
+        </header>
+
+        <div class="controls">
+            <div>
+                <button class="history-btn" onclick="showHistory()">سجل الأوامر (↑↓)</button>
+                <button class="history-btn" onclick="logs.innerHTML=''; addPrompt()">مسح الشاشة</button>
+            </div>
+            <div>
+                <select class="theme-select" onchange="changeTheme(this.value)">
+                    <option value="green">ثيم أخضر كلاسيكي</option>
+                    <option value="white">أبيض</option>
+                    <option value="blue">أزرق</option>
+                    <option value="amber">كهرماني</option>
+                </select>
+                <select class="font-select" onchange="terminalBody.style.fontSize = this.value">
+                    <option value="1rem">حجم عادي</option>
+                    <option value="1.1rem">كبير</option>
+                    <option value="0.9rem">صغير</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="terminal-window">
+            <div class="terminal-header">
+                <span>Command Prompt - PC Edition</span>
+                <div style="display:flex; gap:5px;">
+                    <span style="width:12px;height:12px;background:#ff5f56;border-radius:50%"></span>
+                    <span style="width:12px;height:12px;background:#ffbd2e;border-radius:50%"></span>
+                    <span style="width:12px;height:12px;background:#27c93f;border-radius:50%"></span>
+                </div>
+            </div>
+            <div class="terminal-body" id="terminalOutput">
+                <div class="output">Microsoft Windows [Version 10.0.22631.2025]</div>
+                <div class="output">(c) Microsoft Corporation. All rights reserved.</div>
+                <div class="output"></div>
+                <div class="output">اكتب 'help' للحصول على قائمة الأوامر المدعومة أو 'cls' لتنظيف الشاشة.</div>
+                <div id="logs"></div>
+                <div class="input-line">
+                    <span class="prompt">C:\Users\PC></span>
+                    <input type="text" id="cmdInput" autofocus spellcheck="false" autocomplete="off">
+                </div>
+            </div>
+        </div>
+
+        <div class="search-box">
+            <input type="text" id="searchBar" placeholder="ابحث عن أمر (مثال: dir, netstat, tasklist, shutdown)...">
+        </div>
+
+        <div id="commandsContainer"></div>
+    </div>
+
+    <script>
+        // قائمة شاملة جداً بأوامر CMD الشائعة والمفيدة
+        const cmdData = [
+            {
+                category: "أوامر أساسية ونظام",
+                items: [
+                    { name: "help", desc: "عرض قائمة الأوامر المدعومة في المحاكي." },
+                    { name: "cls", desc: "مسح محتوى الشاشة." },
+                    { name: "dir", desc: "عرض قائمة الملفات والمجلدات (محاكاة)." },
+                    { name: "cd", desc: "تغيير المجلد الحالي (محاكاة)." },
+                    { name: "md", desc: "إنشاء مجلد جديد (محاكاة)." },
+                    { name: "rd", desc: "حذف مجلد (محاكاة)." },
+                    { name: "echo", desc: "عرض نص أو تشغيل/إيقاف عرض الأوامر." },
+                    { name: "title", desc: "تغيير عنوان نافذة المحاكي." },
+                    { name: "ver", desc: "عرض إصدار ويندوز." },
+                    { name: "date", desc: "عرض أو تعديل التاريخ." },
+                    { name: "time", desc: "عرض أو تعديل الوقت." },
+                    { name: "whoami", desc: "عرض اسم المستخدم الحالي." },
+                    { name: "systeminfo", desc: "عرض معلومات مفصلة عن النظام." },
+                    { name: "hostname", desc: "عرض اسم الجهاز." }
+                ]
+            },
+            {
+                category: "أوامر الشبكة",
+                items: [
+                    { name: "ipconfig", desc: "عرض إعدادات الشبكة وIP." },
+                    { name: "ping", desc: "اختبار الاتصال بموقع أو IP." },
+                    { name: "tracert", desc: "تتبع مسار الحزم إلى الوجهة." },
+                    { name: "nslookup", desc: "استعلام DNS." },
+                    { name: "netstat", desc: "عرض الاتصالات الشبكية والمنافذ." },
+                    { name: "arp", desc: "عرض جدول ARP." },
+                    { name: "route", desc: "عرض أو تعديل جدول التوجيه." },
+                    { name: "getmac", desc: "عرض عنوان MAC." }
+                ]
+            },
+            {
+                category: "إدارة العمليات والمهام",
+                items: [
+                    { name: "tasklist", desc: "عرض قائمة العمليات الجاري تشغيلها." },
+                    { name: "taskkill", desc: "إنهاء عملية بالاسم أو PID." },
+                    { name: "start", desc: "فتح برنامج أو موقع." }
+                ]
+            },
+            {
+                category: "صيانة وإصلاح النظام",
+                items: [
+                    { name: "sfc /scannow", desc: "فحص وإصلاح ملفات النظام." },
+                    { name: "chkdsk", desc: "فحص القرص والأخطاء." },
+                    { name: "diskpart", desc: "إدارة الأقراص والأقسام (محاكاة بسيطة)." },
+                    { name: "shutdown", desc: "إيقاف أو إعادة تشغيل الجهاز (محاكاة)." },
+                    { name: "powercfg", desc: "إدارة إعدادات الطاقة." }
+                ]
+            },
+            {
+                category: "أوامر أخرى مفيدة",
+                items: [
+                    { name: "tree", desc: "عرض هيكل المجلدات بشكل شجري." },
+                    { name: "fc", desc: "مقارنة ملفين." },
+                    { name: "find", desc: "البحث عن نص في ملف." },
+                    { name: "sort", desc: "ترتيب محتوى ملف." },
+                    { name: "color", desc: "تغيير ألوان الخلفية والنص." },
+                    { name: "exit", desc: "إغلاق المحاكي (محاكاة)." }
+                ]
+            }
+        ];
+
+        // متغيرات المحاكي
+        const cmdInput = document.getElementById('cmdInput');
+        const logs = document.getElementById('logs');
+        const terminalBody = document.getElementById('terminalOutput');
+        let history = [];
+        let historyIndex = -1;
+        let currentDir = "C:\\Users\\LifeFast";
+
+        // سجل الأوامر (للتنقل بـ ↑ ↓)
+        cmdInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const command = this.value.trim();
+                if (command !== "") {
+                    history.push(command);
+                    historyIndex = history.length;
+                }
+                executeCommand(command);
+                this.value = '';
+                terminalBody.scrollTop = terminalBody.scrollHeight;
+            } else if (e.key === 'ArrowUp') {
+                if (historyIndex > 0) {
+                    historyIndex--;
+                    this.value = history[historyIndex];
+                }
+                e.preventDefault();
+            } else if (e.key === 'ArrowDown') {
+                if (historyIndex < history.length - 1) {
+                    historyIndex++;
+                    this.value = history[historyIndex];
+                } else {
+                    historyIndex = history.length;
+                    this.value = '';
+                }
+                e.preventDefault();
+            }
+        });
+
+        function addLine(text, className = 'output') {
+            const line = document.createElement('div');
+            line.className = className;
+            line.innerHTML = text;
+            logs.appendChild(line);
+        }
+
+        function addPrompt() {
+            const promptLine = document.createElement('div');
+            promptLine.className = 'input-line';
+            promptLine.innerHTML = `<span class="prompt">${currentDir}></span><input type="text" id="cmdInput" autofocus spellcheck="false" autocomplete="off">`;
+            logs.appendChild(promptLine);
+            promptLine.querySelector('input').focus();
+            // إعادة ربط الحدث للإدخال الجديد (لأننا أنشأناه ديناميكياً)
+            document.getElementById('cmdInput').addEventListener('keydown', arguments.callee.caller);
+        }
+
+        function executeCommand(fullCmd) {
+            if (fullCmd === "") return;
+
+            addLine(`<span style="color:var(--primary)">${currentDir}></span> ${fullCmd}`);
+
+            const parts = fullCmd.toLowerCase().split(' ');
+            const cmd = parts[0];
+            const args = parts.slice(1).join(' ');
+
+            let output = "";
+            let isError = false;
+
+            switch (cmd) {
+                case "help":
+                    output = "الأوامر المدعومة في PC CMD Pro:\n\n" +
+                             cmdData.flatMap(cat => cat.items.map(i => i.name)).join(", ") +
+                             "\n\nاكتب اسم الأمر لتنفيذه.";
+                    break;
+                case "cls":
+                    logs.innerHTML = '';
+                    terminalBody.scrollTop = 0;
+                    return;
+                case "dir":
+                    output = ` Directory of ${currentDir}\n\n` +
+                             "12/19/2025  10:00 AM    <DIR>          .\n" +
+                             "12/19/2025  10:00 AM    <DIR>          ..\n" +
+                             "12/01/2025  08:00 PM               123 desktop.ini\n" +
+                             "12/15/2025  03:30 PM    <DIR>          Documents\n" +
+                             "12/10/2025  11:20 AM    <DIR>          Downloads\n" +
+                             "               1 File(s)            123 bytes\n" +
+                             "               4 Dir(s)   500,000,000,000 bytes free";
+                    break;
+                case "cd":
+                    if (args === ".." && currentDir !== "C:\\") {
+                        currentDir = "C:\\";
+                    } else if (args) {
+                        currentDir = currentDir + "\\" + args;
+                    }
+                    output = "";
+                    break;
+                case "md":
+                case "mkdir":
+                    output = args ? `تم إنشاء المجلد ${args} (محاكاة).` : "يجب تحديد اسم المجلد.";
+                    break;
+                case "rd":
+                case "rmdir":
+                    output = args ? `تم حذف المجلد ${args} (محاكاة).` : "يجب تحديد اسم المجلد.";
+                    break;
+                case "echo":
+                    output = args || ".";
+                    break;
+                case "title":
+                    document.querySelector('.terminal-header span').textContent = args || "Command Prompt";
+                    output = "";
+                    break;
+                case "ver":
+                    output = "Microsoft Windows [Version 10.0.22631.2025]";
+                    break;
+                case "date":
+                    output = "The current date is: " + new Date().toLocaleDateString('en-GB');
+                    break;
+                case "time":
+                    output = "The current time is: " + new Date().toLocaleTimeString();
+                    break;
+                case "whoami":
+                    output = "PC\\administrator";
+                    break;
+                case "systeminfo":
+                    output = "Host Name:                 SUHAIBPC-PC\n" +
+                             "OS Name:                   Microsoft Windows 11 Pro\n" +
+                             "OS Version:                10.0.22631\n" +
+                             "System Type:               x64-based PC\n" +
+                             "Total Physical Memory:     16,384 MB";
+                    break;
+                case "hostname":
+                    output = "SUHAIBPC-PC";
+                    break;
+                case "ipconfig":
+                    output = "Windows IP Configuration\n\n" +
+                             "Ethernet adapter Ethernet:\n\n" +
+                             "   IPv4 Address. . . . . . . . . . . : 192.168.1.105\n" +
+                             "   Subnet Mask . . . . . . . . . . . : 255.255.255.0\n" +
+                             "   Default Gateway . . . . . . . . . : 192.168.1.1";
+                    break;
+                case "ping":
+                    output = args ? `Pinging ${args} with 32 bytes of data:\nReply from 142.250.190.46: bytes=32 time=12ms TTL=117\nReply from 142.250.190.46: bytes=32 time=15ms TTL=117` : "Usage: ping <host>";
+                    break;
+                case "tracert":
+                    output = args ? `Tracing route to ${args} over a maximum of 30 hops:\n  1    <1 ms    <1 ms    <1 ms  192.168.1.1\n  2    12 ms    10 ms    11 ms  ...` : "Usage: tracert <host>";
+                    break;
+                case "netstat":
+                    output = "Active Connections\n\n  Proto  Local Address          Foreign Address        State\n  TCP    192.168.1.105:54321    142.250.190.46:443     ESTABLISHED";
+                    break;
+                case "tasklist":
+                    output = "Image Name                     PID Session Name        Mem Usage\n========================= ======== ================ ===========\nexplorer.exe                  1234 Console                    45,212 K\nchrome.exe                    5678 Console                   120,000 K";
+                    break;
+                case "taskkill":
+                    output = args ? `SUCCESS: The process with PID ${args.split(' ')[0]} has been terminated (simulation).` : "Usage: taskkill /PID <number> or /IM <name>";
+                    break;
+                case "sfc":
+                    output = args === "/scannow" ? "Scanning system files... (simulation)\nVerification 100% complete.\nWindows Resource Protection did not find any integrity violations." : "Usage: sfc /scannow";
+                    break;
+                case "chkdsk":
+                    output = "Checking disk... (simulation)\nStage 1: Examining basic file system structure...\nNo errors found.";
+                    break;
+                case "shutdown":
+                    output = args ? `System will shutdown in 60 seconds (simulation). Use /a to abort.` : "Usage: shutdown /s /t 0";
+                    break;
+                case "tree":
+                    output = "Folder PATH listing\n" +
+                             "C:.\n" +
+                             "├───Documents\n" +
+                             "├───Downloads\n" +
+                             "└───Pictures";
+                    break;
+                case "color":
+                    if (args.length === 2) changeColor(args);
+                    output = "";
+                    break;
+                case "exit":
+                    output = "Thank you for using SUHAIBPC CMD Pro!";
+                    break;
+                default:
+                    output = `'${fullCmd}' is not recognized as an internal or external command,\noperable program or batch file.`;
+                    isError = true;
+            }
+
+            if (output !== "") {
+                addLine(output.replace(/\n/g, '<br>'), isError ? 'output error' : 'output');
+            }
+        }
+
+        // تغيير الثيم
+        function changeTheme(theme) {
+            if (theme === "green") {
+                document.documentElement.style.setProperty('--primary', '#00ff41');
+                document.documentElement.style.setProperty('--terminal-text', '#00ff41');
+            } else if (theme === "white") {
+                document.documentElement.style.setProperty('--primary', '#ffffff');
+                document.documentElement.style.setProperty('--terminal-text', '#ffffff');
+            } else if (theme === "blue") {
+                document.documentElement.style.setProperty('--primary', '#0fffff');
+                document.documentElement.style.setProperty('--terminal-text', '#0fffff');
+            } else if (theme === "amber") {
+                document.documentElement.style.setProperty('--primary', '#ffb000');
+                document.documentElement.style.setProperty('--terminal-text', '#ffb000');
+            }
+        }
+
+        // عرض سجل الأوامر
+        function showHistory() {
+            alert("سجل الأوامر الأخيرة:\n\n" + (history.slice(-20).join("\n") || "لا يوجد سجل بعد"));
+        }
+
+        // البحث والعرض
+        function renderCommands(filter = "") {
+            const container = document.getElementById('commandsContainer');
+            container.innerHTML = "";
+            const lowerFilter = filter.toLowerCase();
+
+            cmdData.forEach(cat => {
+                const filteredItems = cat.items.filter(item => 
+                    item.name.toLowerCase().includes(lowerFilter) || 
+                    item.desc.includes(filter)
+                );
+                if (filteredItems.length > 0) {
+                    const section = document.createElement('div');
+                    section.innerHTML = `<h2 class="category-title">${cat.category} (${filteredItems.length})</h2>`;
+                    filteredItems.forEach(item => {
+                        const card = document.createElement('div');
+                        card.className = 'cmd-card';
+                        card.onclick = () => { 
+                            cmdInput.value = item.name; 
+                            cmdInput.focus(); 
+                        };
+                        card.innerHTML = `<span class="cmd-name">${item.name}</span> <span>${item.desc}</span>`;
+                        section.appendChild(card);
+                    });
+                    container.appendChild(section);
+                }
+            });
+        }
+
+        document.getElementById('searchBar').addEventListener('input', (e) => renderCommands(e.target.value));
+        renderCommands();
+    </script>
+</body>
+</html>
