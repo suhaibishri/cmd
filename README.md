@@ -29,5 +29,5 @@
 
 اكتب `help` داخل المحاكي للحصول على القائمة الكاملة.
 !
-
+https://suhaibishri.github.io/cmd/ 
 ```html>
